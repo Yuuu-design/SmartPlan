@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SHENGHU SmartPlan · 答辩演示</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --bg-elevated: #ffffff;
+    --bg-panel: rgba(255,255,255,0.78);
+    --bg-panel-solid: #ffffff;
+    --border: rgba(0,0,0,0.1);
+    --grid: rgba(0,0,0,0.055);
+    --text: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --text-tertiary: #aeaeb2;
+    --text-dim: #6e6e73;
+    --accent: #0a84ff;
+    --blue: #0a84ff;
+    --cyan: #007aff;
+    --purple: #5e5ce6;
+    --green: #34c759;
+    --yellow: #ffcc00;
+    --orange: #ff9500;
+    --red: #ff3b30;
+    --red-bright: #ff3b30;
+    --mono: 'SF Mono','JetBrains Mono','Menlo','Consolas',monospace;
+    --font-xs: 12px;
+    --font-sm: 13px;
+    --font-base: 14px;
+    --font-md: 16px;
+    --font-lg: 20px;
+    --font-xl: 28px;
+    --font-2xl: 36px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 22px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+    --shadow-lg: 0 16px 48px rgba(0,0,0,0.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body,#root{height:100%}
+  body{
+    background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue','PingFang SC','Microsoft YaHei',sans-serif;
+    font-size:var(--font-base);line-height:1.5;overflow:hidden;-webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ===================== 答辩演示页 ===================== */
+.presentation{position:fixed;inset:0;background:#fff;overflow:hidden;display:flex;flex-direction:column}
+.present-viewport{height:100%;overflow:hidden}
+.present-slide{height:100%;padding:72px 88px;display:flex;flex-direction:column;justify-content:center;overflow-y:auto}
+.present-exit{position:absolute;top:20px;right:24px;z-index:10;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.05);border:1px solid var(--border);color:var(--text-secondary);border-radius:999px;padding:8px 16px;cursor:pointer;font-size:var(--font-sm);transition:all .15s ease}
+.present-exit:hover{background:rgba(0,0,0,0.08);color:var(--text)}
+.present-nav{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:16px;z-index:10}
+.present-arrow{width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,0.06);border:1px solid var(--border);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease}
+.present-arrow:hover:not(:disabled){background:var(--accent);color:#fff}
+.present-arrow:disabled{opacity:.3;cursor:default}
+.present-dots{display:flex;gap:10px}
+.present-dot{width:9px;height:9px;border-radius:50%;border:none;background:rgba(0,0,0,0.15);cursor:pointer;transition:all .3s ease}
+.present-dot.active{background:var(--accent);width:28px;border-radius:5px}
+.present-hint{position:absolute;bottom:16px;right:24px;font-size:var(--font-xs);color:var(--text-tertiary)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{opacity:0;animation:fadeUp .7s cubic-bezier(.22,1,.36,1) forwards}
+
+.present-slide.cover{align-items:flex-start;justify-content:center;gap:34px;position:relative}
+.cover-glow{position:absolute;top:-20%;right:-10%;width:60vw;height:60vw;background:radial-gradient(circle,rgba(10,132,255,.12),transparent 60%);border-radius:50%;animation:glowFloat 8s ease-in-out infinite}
+@keyframes glowFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-40px) scale(1.08)}}
+.cover-logo{display:flex;align-items:center;gap:10px;font-size:var(--font-lg);font-weight:700;letter-spacing:.02em}
+.present-slide.cover h1{font-size:64px;font-weight:800;letter-spacing:-.03em;line-height:1.15;max-width:800px;background:linear-gradient(120deg,#1d1d1f 30%,#0a84ff 70%,#007aff 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.cover-sub{font-size:var(--font-lg);color:var(--text-secondary);max-width:640px}
+.cover-tags{display:flex;flex-wrap:wrap;gap:10px}
+.cover-tag{padding:8px 16px;background:rgba(10,132,255,.08);color:var(--accent);border-radius:999px;font-size:var(--font-sm);font-weight:600}
+
+.slide-kicker{font-size:var(--font-sm);color:var(--accent);font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px}
+.slide-title{font-size:40px;font-weight:700;letter-spacing:-.02em;line-height:1.25;max-width:860px}
+.slide-foot{font-size:var(--font-lg);color:var(--text-secondary);max-width:760px;line-height:1.75;margin-top:28px}
+
+.pain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin:52px 0;max-width:1040px}
+.pain-card{background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px 32px;display:flex;flex-direction:column;gap:18px;box-shadow:var(--shadow-sm);transition:transform .2s ease,box-shadow .2s ease}
+.pain-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
+.pain-card h3{font-size:var(--font-xl);font-weight:600}
+.pain-card p{font-size:var(--font-md);color:var(--text-secondary);line-height:1.6}
+
+.arch-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:4px}
+.arch-node{padding:12px 20px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border);font-weight:600;font-size:var(--font-base)}
+.arch-core{background:var(--accent);color:#fff;border-color:var(--accent)}
+.arch-ai{background:linear-gradient(135deg,#0a84ff,#5e5ce6);color:#fff;border:none}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin:44px 0;max-width:1040px}
+.present-kpi{background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow-sm)}
+.present-kpi-label{font-size:var(--font-md);color:var(--text-secondary);font-weight:600}
+.present-kpi-value{font-family:var(--mono);font-size:52px;font-weight:700;letter-spacing:-.02em}
+
+.chart-card{background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;box-shadow:var(--shadow-sm)}
+.chart-title{font-size:var(--font-md);font-weight:600;margin-bottom:18px}
+
+.opt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:40px;max-width:1080px}
+.opt-card{background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px 32px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow-sm)}
+.opt-pct{font-size:52px;font-weight:700;color:var(--accent);font-family:var(--mono);letter-spacing:-.02em}
+.opt-label{font-size:var(--font-lg);font-weight:600}
+.opt-detail{font-size:var(--font-base);color:var(--text-secondary);line-height:1.6}
+
+.improve-side{border-radius:var(--radius-md);padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.improve-side.pain{background:rgba(255,59,48,.06);border:1px solid rgba(255,59,48,.18)}
+.improve-side.fix{background:rgba(10,132,255,.06);border:1px solid rgba(10,132,255,.22)}
+.improve-tag{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.improve-side.pain .improve-tag{color:var(--red)}
+.improve-side.fix .improve-tag{color:var(--accent)}
+.improve-side p{font-size:var(--font-base);line-height:1.7;color:var(--text-secondary)}
+
+.improve-effect{display:inline-flex;align-items:center;gap:6px;font-size:var(--font-sm);font-weight:600;color:var(--accent);background:rgba(10,132,255,.08);padding:5px 14px;border-radius:999px;align-self:flex-start}
+
+.improve-fig{flex:1;min-width:0;margin:0;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;display:flex;flex-direction:column}
+.improve-fig img{width:100%;height:400px;object-fit:contain;object-position:center center;background:#fff;display:block}
+.improve-fig-placeholder{width:100%;height:400px;display:none;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:var(--bg);color:var(--text-tertiary);font-size:12px}
+.improve-fig figcaption{font-size:var(--font-sm);color:var(--text-secondary);padding:8px 10px;text-align:center;border-top:1px solid var(--grid);background:var(--bg-elevated)}
+
+.imp-single{display:flex;flex-direction:column;gap:22px;margin-top:28px;max-width:1120px}
+.imp-single-text{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:stretch}
+.imp-arrow{display:flex;align-items:center;justify-content:center}
+.imp-single-fig{display:flex;gap:16px}
+.imp-single .improve-effect{align-self:flex-start}
+
+.resched-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin:40px 0;max-width:1120px}
+
+.close-ring{position:relative;width:460px;height:460px;margin:44px auto;flex-shrink:0}
+.close-ring-dash{position:absolute;inset:20px;border:2px dashed rgba(10,132,255,.22);border-radius:50%;animation:ringSpin 36s linear infinite}
+@keyframes ringSpin{to{transform:rotate(360deg)}}
+.close-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:170px;height:170px;border-radius:50%;background:linear-gradient(135deg,#0a84ff,#5e5ce6);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:var(--font-md);box-shadow:0 16px 40px rgba(10,132,255,.35)}
+.close-item{position:absolute;top:50%;left:50%;margin:-50px 0 0 -50px;width:100px;height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center}
+.close-item-num{position:absolute;top:-6px;right:-4px;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:var(--font-xs);font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm)}
+.close-item-label{font-size:var(--font-xs);font-weight:600;color:var(--text);white-space:nowrap}
+
+.kpi-charts{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:1320px;width:100%}
+.opt-charts{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin:44px 0 32px;max-width:1120px}
+@media(max-width:1200px){.kpi-charts{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+const { useEffect, useMemo, useRef, useState } = React;
+
+/* ===================== 图标组件 ===================== */
+const ICON_PATHS = {
+  zap: 'M13 2 3 14h9l-1 8 10-12h-9l1-8z',
+  factory: 'M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z M17 18h1 M12 18h1 M7 18h1',
+  layers: 'm12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z m22 12-8.58 3.91a2 2 0 0 1-1.66 0L2.6 12 m22 17-8.58 3.91a2 2 0 0 1-1.66 0L2.6 17',
+  sparkles: 'm12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z M5 3v4 M19 17v4 M3 5h4 M17 19h4',
+  search: 'M11 11a8 8 0 1 0 0-16 8 8 0 0 0 0 16z M21 21l-4.3-4.3',
+  chart: 'M3 3v16a2 2 0 0 0 2 2h16 M7 16v-5 M12 16V8 M17 16v-3',
+  alert: 'm21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z M12 9v4 M12 17h.01',
+  check: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z m9-12-2 2 4-4',
+  'trend-up': 'M22 7 13.5 15.5 8.5 10.5 2 17 M16 7h6v6',
+  'trend-down': 'M22 17 13.5 8.5 8.5 13.5 2 7 M16 17h6v-6',
+  x: 'M18 6 6 18 M6 6l12 12',
+  plus: 'M5 12h14 M12 5v14',
+  minus: 'M5 12h14',
+  'arrow-right': 'M5 12h14 M12 5l7 7-7 7',
+  upload: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M17 8l-5-5-5 5 M12 3v12',
+  file: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6',
+  download: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5 M12 15V3',
+  wrench: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z',
+  package: 'M16.5 9.4 7.55 4.24 M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z M3.27 6.96 12 12.01l8.73-5.05 M12 22.08V12',
+  lock: 'M3 11h18v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M7 11V7a5 5 0 0 1 10 0v4',
+};
+
+function Icon({ name, size = 20, color = 'currentColor', strokeWidth = 1.75, style }) {
+  const d = ICON_PATHS[name] || '';
+  // 兼容大写 M 和小写 m，M 后面可以是任意字符（数字或字母）
+  const parts = d.split(/(?<=Z|z|[a-z0-9])\s+([Mm])/);
+  // split 结果：[前半段, 'M'或'm', 后半段, 'M'或'm', ...]
+  const paths = [];
+  let i = 0;
+  if (parts.length > 0 && parts[0]) {
+    // 第一部分可能以小写 m 开头
+    paths.push(parts[0]);
+    i = 1;
+  }
+  for (; i < parts.length; i += 2) {
+    if (i + 1 < parts.length && parts[i + 1]) {
+      paths.push((parts[i] || 'M') + parts[i + 1]);
+    }
+  }
+  return React.createElement('svg', {
+    width: size, height: size, viewBox: '0 0 24 24', fill: 'none',
+    stroke: color, strokeWidth, strokeLinecap: 'round', strokeLinejoin: 'round',
+    'aria-hidden': 'true', style
+  }, paths.map((p, idx) => {
+    // 确保 path 以 M/m 开头
+    const fixed = /^[Mm]/.test(p) ? p : 'M' + p;
+    return React.createElement('path', { key: idx, d: fixed });
+  }));
+}
+
+/* ===================== ECharts 包装 ===================== */
+function EChart({ option, height = 240 }) {
+  const ref = useRef(null);
+  const inst = useRef(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    if (!inst.current) inst.current = echarts.init(ref.current);
+    inst.current.setOption(option, true);
+    return () => { if (inst.current) inst.current.dispose(); inst.current = null; };
+  }, []);
+  useEffect(() => { if (inst.current) inst.current.setOption(option); }, [option]);
+  return React.createElement('div', { ref, style: { width: '100%', height } });
+}
+
+/* ===================== 颜色与工具 ===================== */
+const C = {
+  blue:'#0a84ff', cyan:'#007aff', green:'#34c759', yellow:'#ffcc00',
+  orange:'#ff9500', red:'#ff3b30', purple:'#5e5ce6', text:'#1d1d1f',
+  text2:'#6e6e73', grid:'rgba(0,0,0,0.06)',
+};
+const PROC_CN = { Drawing:'拉丝', Stranding:'捻股', Roping:'合绳' };
+
+function cubicBezier(x1,y1,x2,y2){
+  const cx=3*x1,bx=3*(x2-x1)-cx,ax=1-cx-bx;
+  const cy=3*y1,by=3*(y2-y1)-cy,ay=1-cy-by;
+  const sx=t=>((ax*t+bx)*t+cx)*t, sy=t=>((ay*t+by)*t+cy)*t, sdx=t=>(3*ax*t+2*bx)*t+cx;
+  const solve=x=>{let t=x;for(let i=0;i<8;i++){const e=sx(t)-x;if(Math.abs(e)<1e-6)return t;const d=sdx(t);if(Math.abs(d)<1e-6)break;t-=e/d;}let lo=0,hi=1;t=x;while(lo<hi){const e=sx(t);if(Math.abs(e-x)<1e-6)return t;if(x>e)lo=t;else hi=t;t=(hi-lo)/2+lo;}return t;};
+  return k=>(k<=0?0:k>=1?1:sy(solve(k)));
+}
+const EASE = {
+  barBounce:'bounceOut', pieElastic:'elasticOut', barQuartic:'quarticOut',
+  lineSmooth:'cubicInOut', radarSmooth:'cubicInOut',
+  compareBack:cubicBezier(.34,1.56,.64,1), tensionBack:cubicBezier(.68,-.55,.265,1.55),
+};
+
+function CountUp({ value, decimals=0, suffix='', duration=1400 }) {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    let raf=0; const start=performance.now();
+    const tick=now=>{const t=Math.min(1,(now-start)/duration);const e=1-Math.pow(1-t,3);setDisplay(value*e);if(t<1)raf=requestAnimationFrame(tick);};
+    raf=requestAnimationFrame(tick); return ()=>cancelAnimationFrame(raf);
+  }, [value, duration]);
+  return React.createElement('span', null, display.toFixed(decimals), suffix);
+}
+
+function computeStats(tasks) {
+  const machineLoad=new Map(), machineSetup=new Map();
+  const procCount={Drawing:0,Stranding:0,Roping:0}, setupByProc={Drawing:0,Stranding:0,Roping:0};
+  const orderEnd=new Map();
+  for(const t of tasks){
+    machineLoad.set(t.machine_id,(machineLoad.get(t.machine_id)??0)+t.duration_minutes);
+    if(t.setup_time>0) machineSetup.set(t.machine_id,(machineSetup.get(t.machine_id)??0)+1);
+    procCount[t.process_type]++;
+    if(t.setup_time>0) setupByProc[t.process_type]++;
+    if(t.process_type==='Roping') orderEnd.set(t.order_id,t.end_time);
+  }
+  return {
+    loadRank:Array.from(machineLoad.entries()).sort((a,b)=>b[1]-a[1]).slice(0,8),
+    setupRank:Array.from(machineSetup.entries()).sort((a,b)=>b[1]-a[1]).slice(0,8),
+    procCount, setupByProc,
+    finishTimes:Array.from(orderEnd.values()).sort((a,b)=>a-b),
+  };
+}
+
+/* ===================== Mock 数据（不依赖后端） ===================== */
+function genMockSchedule() {
+  const procs = ['Drawing','Stranding','Roping'];
+  const machineMap = { Drawing:[], Stranding:[], Roping:[] };
+  for(let i=0;i<28;i++) machineMap.Drawing.push('81'+String(100+i).slice(-3));
+  for(let i=0;i<47;i++) machineMap.Stranding.push('82'+String(100+i).slice(-3));
+  for(let i=0;i<12;i++) machineMap.Roping.push('83'+String(100+i).slice(-3));
+  const tasks = [];
+  let tid = 0, t = 0;
+  for(let o=0; o<50; o++){
+    const orderId = '2901-'+String(20260800001+o);
+    const start = o * 30 + Math.floor(Math.random()*20);
+    procs.forEach((p, pi) => {
+      const m = machineMap[p][o % machineMap[p].length];
+      const dur = 60 + Math.floor(Math.random()*300);
+      const setup = pi > 0 && Math.random() < 0.5 ? 15 + Math.floor(Math.random()*45) : 0;
+      tasks.push({
+        task_id: 'T-'+(tid++), order_id: orderId, process_type: p,
+        machine_id: m, machine_name: m, spec: '12mm GT6Z', qty_meters: 1000,
+        start_time: start + t, end_time: start + t + dur,
+        duration_minutes: dur, setup_time: setup, is_locked: false, status: 'ON_TIME',
+      });
+      t += 5;
+    });
+  }
+  const totalMach = 87;
+  const totalDur = tasks.reduce((s,t)=>s+t.duration_minutes,0);
+  const span = Math.max(...tasks.map(t=>t.end_time)) - Math.min(...tasks.map(t=>t.start_time));
+  return {
+    scheduled_tasks: tasks,
+    kpis: {
+      otd: 0.98, utilization: 0.87, makespan: span,
+      utilization_by_process: { Drawing:0.59, Stranding:0.88, Roping:0.88 },
+      total_setup_count: 54, tardy_orders: 1,
+    },
+    decision_reasons: [],
+  };
+}
+
+function genMockSimulation() {
+  const baseline = genMockSchedule();
+  const scenarios = [
+    { name:'方案A·保交期', otd:1.0, total_perturbation_min:3391, disrupted_tasks:12, result:genMockSchedule() },
+    { name:'方案B·少扰动', otd:0.98, total_perturbation_min:0, disrupted_tasks:12, result:genMockSchedule() },
+    { name:'方案C·高效率', otd:0.98, total_perturbation_min:4688, disrupted_tasks:17, result:genMockSchedule() },
+  ];
+  return { baseline, scenarios };
+}
+
+const mockSchedule = genMockSchedule();
+const mockSim = genMockSimulation();
+
+/* ===================== 5 项改进数据 ===================== */
+const IMPROVEMENTS = [
+  {
+    icon:'arrow-right', title:'依赖连线拎出单订单流程',
+    pain:'甘特图全量依赖连线交织，数百条橙色箭头互相穿插，无法看清任一订单从拉丝到合绳的完整路径。',
+    fix:'点击订单即拎出该订单的 拉丝→捻股→合绳 链路：链路任务高亮品牌蓝、其余任务降至 12% 透明、依赖线同步亮蓝，一眼看清流程。',
+    effect:'订单级流程可追溯',
+    images:[
+      {src:'improvement/dependency-before.png', caption:'改进前：连线满屏交织'},
+      {src:'improvement/dependency-after.png', caption:'改进后：单订单链路高亮'},
+    ],
+  },
+  {
+    icon:'factory', title:'系统与工厂打通：3D 实时看板',
+    pain:'排产系统与车间现场分离，计划下发后看不到设备实际在做哪个订单、进度到哪。',
+    fix:'新增 3D 生产实时看板，按 拉丝/捻股/合绳 分区呈现设备与在制订单，点击设备可查编号、当前工序、订单、规格、状态、进度与利用率。',
+    effect:'计划—现场一屏贯通',
+    images:[{src:'improvement/workshop-3d.jpg', caption:'三工序车间数字孪生'}],
+  },
+  {
+    icon:'chart', title:'KPI 看板可下钻具体数据',
+    pain:'准时交付率、设备综合利用率、换型时长只显示一个汇总数字，无法回答"为什么是这个值、怎么提升"。',
+    fix:'点击 KPI 卡片弹出分析弹窗：交付率拆到订单/工序、利用率拆到设备负荷结构、换型拆到跨规格/同规格原因，并给出量化提升建议。',
+    effect:'从看数到看原因',
+    images:[{src:'improvement/kpi-drilldown.png', caption:'点击 KPI 下钻分析弹窗'}],
+  },
+  {
+    icon:'layers', title:'折叠卡片让页面更干净',
+    pain:'页面信息一次性铺开，文字密集、重点不突出，评审时难以快速定位。',
+    fix:'改进建议、决策原因等长文本改为折叠卡片，默认收起、点击展开，主视图只保留甘特图与关键 KPI。',
+    effect:'信噪比显著提升',
+    images:[
+      {src:'improvement/collapse-before.png', caption:'折叠前：信息铺满'},
+      {src:'improvement/collapse-after.jpg', caption:'折叠后：干净聚焦'},
+    ],
+  },
+  {
+    icon:'sparkles', title:'颜色体系统一',
+    pain:'黄/橙/绿/蓝/紫多色高亮争抢视觉，无主色，无法第一时间识别重点与告警。',
+    fix:'确立三色语义：工序色仅用于任务块本身（拉丝绿/捻股蓝/合绳紫），品牌蓝统一作为强调与交互色，红色为唯一告警色，黄/橙退出主界面。',
+    effect:'重点一眼可达',
+    images:[{src:'improvement/color-unified.jpg', caption:'三色语义：工序色 / 蓝强调 / 红告警'}],
+  },
+];
+
+function ImgWithFallback({ src, caption }) {
+  return React.createElement('figure', { className:'improve-fig' },
+    React.createElement('img', { src, alt:caption, loading:'lazy',
+      onError:e=>{ e.currentTarget.style.display='none'; const ph=e.currentTarget.nextElementSibling; if(ph)ph.style.display='flex'; }
+    }),
+    React.createElement('div', { className:'improve-fig-placeholder' },
+      React.createElement(Icon, { name:'file', size:20, color:C.text2 }),
+      React.createElement('span', null, '图片待放入')
+    ),
+    React.createElement('figcaption', null, caption)
+  );
+}
+
+const h = React.createElement;
+
+/* ===================== 各幕 ===================== */
+function SlideCover(){
+  return h('section',{className:'present-slide cover'},
+    h('div',{className:'cover-glow'}),
+    h('div',{className:'fade-up',style:{animationDelay:'.1s'}},
+      h('div',{className:'cover-logo'},
+        h(Icon,{name:'factory',size:30,color:C.cyan}),
+        'SHENGHU ', h('span',{style:{color:C.cyan}},'SmartPlan')
+      )
+    ),
+    h('h1',{className:'fade-up',style:{animationDelay:'.3s'}},'从自动排产，到动态决策'),
+    h('p',{className:'fade-up cover-sub',style:{animationDelay:'.5s'}},'面向钢丝绳多工序制造的智能排产系统 · 运筹优化 × 可解释 AI'),
+    h('div',{className:'fade-up cover-tags',style:{animationDelay:'.7s'}},
+      ['CP-SAT 精确求解','最小扰动重排','R1-R10 可解释','人工决策闭环'].map(t=>h('span',{key:t,className:'cover-tag'},t))
+    )
+  );
+}
+
+function SlideProblem(){
+  const pains=[
+    {icon:'alert',title:'交期延误',desc:'订单多、工序长，人工排产难保证交期',color:C.red},
+    {icon:'chart',title:'设备忙闲不均',desc:'部分设备过载、部分闲置，产能浪费',color:C.orange},
+    {icon:'trend-up',title:'插单打乱计划',desc:'异常与插单频繁，一改全盘乱',color:C.blue},
+  ];
+  return h('section',{className:'present-slide'},
+    h('div',{className:'fade-up'},
+      h('div',{className:'slide-kicker'},'01 · 问题'),
+      h('h2',{className:'slide-title'},'从订单到机台，难在三个痛点')
+    ),
+    h('div',{className:'pain-grid'},
+      pains.map((p,i)=>h('div',{key:p.title,className:'pain-card fade-up',style:{animationDelay:`${.2+i*.15}s`}},
+        h(Icon,{name:p.icon,size:28,color:p.color}),
+        h('h3',null,p.title),
+        h('p',null,p.desc)
+      ))
+    ),
+    h('div',{className:'fade-up arch-row',style:{animationDelay:'.7s'}},
+      h('div',{className:'arch-node'},'订单数据'),
+      h(Icon,{name:'arrow-right',size:18,color:C.text2}),
+      h('div',{className:'arch-node arch-core'},'CP-SAT 优化求解'),
+      h(Icon,{name:'arrow-right',size:18,color:C.text2}),
+      h('div',{className:'arch-node'},'排产计划'),
+      h(Icon,{name:'arrow-right',size:18,color:C.text2}),
+      h('div',{className:'arch-node arch-ai'},'AI 解释')
+    ),
+    h('p',{className:'fade-up slide-foot',style:{animationDelay:'.9s'}},
+      '核心架构：',h('strong',null,'算控分离'),' —— 运筹优化负责计算，AI 只做意图识别与解释，不碰数学。'
+    )
+  );
+}
+
+function SlideImprovement({ index }){
+  const it = IMPROVEMENTS[index];
+  const isPair = it.images.length > 1;
+  return h('section',{className:'present-slide'},
+    h('div',{className:'fade-up'},
+      h('div',{className:'slide-kicker'},`02 · 迭代改进 ${index+1} / 5`),
+      h('h2',{className:'slide-title'},it.title)
+    ),
+    h('div',{className:'imp-single fade-up',style:{animationDelay:'.15s'}},
+      h('div',{className:'imp-single-text'},
+        h('div',{className:'improve-side pain'},
+          h('span',{className:'improve-tag'},'痛点'), h('p',null,it.pain)
+        ),
+        h('div',{className:'imp-arrow'}, h(Icon,{name:'arrow-right',size:18,color:C.blue})),
+        h('div',{className:'improve-side fix'},
+          h('span',{className:'improve-tag'},'改进'), h('p',null,it.fix)
+        )
+      ),
+      h('div',{className:'imp-single-fig'+(isPair?' pair':'')},
+        it.images.map(img=>h(ImgWithFallback,{key:img.src,src:img.src,caption:img.caption}))
+      ),
+      h('div',{className:'improve-effect'},
+        h(Icon,{name:'check',size:13,color:C.blue}), it.effect
+      )
+    )
+  );
+}
+
+function SlideKPI({ kpi, stats }){
+  const byProc = kpi ? Object.entries(kpi.kpis.utilization_by_process).map(([k,v])=>({name:PROC_CN[k]??k,value:+(v*100).toFixed(1)})) : [];
+  const utilOption = { animationDuration:1200, animationEasing:EASE.barBounce,
+    tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
+    grid:{left:40,right:20,top:30,bottom:30},
+    xAxis:{type:'category',data:byProc.map(d=>d.name),axisLine:{lineStyle:{color:C.grid}},axisLabel:{color:C.text2}},
+    yAxis:{type:'value',max:100,axisLabel:{color:C.text2,formatter:'{value}%'},splitLine:{lineStyle:{color:C.grid}}},
+    series:[{type:'bar',data:byProc.map(d=>d.value),barWidth:44,
+      itemStyle:{borderRadius:[8,8,0,0],color:p=>[C.green,C.blue,C.purple][p.dataIndex%3]},
+      label:{show:true,position:'top',color:C.text,fontWeight:600,formatter:'{c}%'}}]};
+  const donutOption = { animationDuration:1200, animationEasing:EASE.pieElastic,
+    tooltip:{trigger:'item',formatter:'{b}: {c} 个 ({d}%)'},
+    legend:{bottom:0,textStyle:{color:C.text2}},
+    series:[{type:'pie',radius:['45%','70%'],itemStyle:{borderRadius:6,borderColor:'#fff',borderWidth:2},label:{color:C.text,fontWeight:600},
+      data:[
+        {name:'拉丝',value:stats?.procCount.Drawing??0,itemStyle:{color:C.green}},
+        {name:'捻股',value:stats?.procCount.Stranding??0,itemStyle:{color:C.blue}},
+        {name:'合绳',value:stats?.procCount.Roping??0,itemStyle:{color:C.purple}},
+      ]}]};
+  const loadOption = { animationDuration:1200, animationEasing:EASE.barQuartic,
+    tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
+    grid:{left:60,right:40,top:10,bottom:30},
+    xAxis:{type:'value',axisLabel:{color:C.text2,formatter:v=>(Number(v)/60).toFixed(0)+'h'},splitLine:{lineStyle:{color:C.grid}}},
+    yAxis:{type:'category',data:(stats?.loadRank??[]).map(r=>r[0]),axisLabel:{color:C.text},inverse:true},
+    series:[{type:'bar',data:(stats?.loadRank??[]).map(r=>r[1]),barWidth:16,itemStyle:{color:C.cyan,borderRadius:[0,6,6,0]},
+      label:{show:true,position:'right',color:C.text2,formatter:p=>(Number(p.value)/60).toFixed(1)+'h'}}]};
+  const finishOption = { animationDuration:1600, animationEasing:EASE.lineSmooth,
+    tooltip:{trigger:'axis'},
+    grid:{left:50,right:20,top:20,bottom:30},
+    xAxis:{type:'category',data:(stats?.finishTimes??[]).map((_,i)=>i+1),name:'订单序',axisLabel:{color:C.text2},axisLine:{lineStyle:{color:C.grid}}},
+    yAxis:{type:'value',axisLabel:{color:C.text2,formatter:v=>(Number(v)/1440).toFixed(0)+'d'},splitLine:{lineStyle:{color:C.grid}}},
+    series:[{type:'line',data:stats?.finishTimes??[],smooth:true,lineStyle:{color:C.orange,width:3},itemStyle:{color:C.orange},areaStyle:{color:'rgba(255,149,0,.12)'}}]};
+  const kpiItems=[
+    {label:'准时交付率',value:kpi?kpi.kpis.otd*100:0,decimals:1,suffix:'%',color:C.green},
+    {label:'活跃设备利用率',value:kpi?kpi.kpis.utilization*100:0,decimals:1,suffix:'%',color:C.cyan},
+    {label:'总换型次数',value:kpi?kpi.kpis.total_setup_count:0,decimals:0,suffix:' 次',color:C.yellow},
+    {label:'延期订单',value:kpi?kpi.kpis.tardy_orders:0,decimals:0,suffix:' 单',color:C.red},
+  ];
+  return h('section',{className:'present-slide'},
+    h('div',{className:'fade-up'},
+      h('div',{className:'slide-kicker'},'03 · 自动排产'),
+      h('h2',{className:'slide-title'},'一次求解，交期优先')
+    ),
+    h('div',{className:'kpi-grid'},
+      kpiItems.map((k,i)=>h('div',{key:k.label,className:'present-kpi fade-up',style:{animationDelay:`${.15+i*.1}s`}},
+        h('div',{className:'present-kpi-label'},k.label),
+        h('div',{className:'present-kpi-value',style:{color:k.color}},
+          h(CountUp,{value:k.value,decimals:k.decimals,suffix:k.suffix})
+        )
+      ))
+    ),
+    h('div',{className:'kpi-charts'},
+      h('div',{className:'chart-card fade-up',style:{animationDelay:'.55s'}},h('div',{className:'chart-title'},'三工序设备利用率'),h(EChart,{option:utilOption,height:240})),
+      h('div',{className:'chart-card fade-up',style:{animationDelay:'.65s'}},h('div',{className:'chart-title'},'三工序任务占比'),h(EChart,{option:donutOption,height:240})),
+      h('div',{className:'chart-card fade-up',style:{animationDelay:'.75s'}},h('div',{className:'chart-title'},'设备加工负荷 Top 8'),h(EChart,{option:loadOption,height:240})),
+      h('div',{className:'chart-card fade-up',style:{animationDelay:'.85s'}},h('div',{className:'chart-title'},'订单完工时间线'),h(EChart,{option:finishOption,height:240}))
+    )
+  );
+}
+
+function SlideOptimization({ stats }){
+  const rows=[
+    {label:'换型弧（全连接 → 稀疏图）',before:'113 万条',after:'3.4 万条',pct:97},
+    {label:'模型构建时间',before:'25 秒',after:'1 秒',pct:96},
+    {label:'全量求解状态',before:'超时无解',after:'15 秒 FEASIBLE',pct:100},
+  ];
+  const compareOption={animationDuration:1400,animationEasing:EASE.compareBack,tooltip:{},
+    grid:{left:120,right:30,top:30,bottom:30},
+    xAxis:{type:'value',splitLine:{lineStyle:{color:C.grid}},axisLabel:{color:C.text2}},
+    yAxis:{type:'category',data:rows.map(r=>r.label),axisLabel:{color:C.text,width:140,overflow:'truncate'}},
+    series:[
+      {name:'优化前',type:'bar',data:[1130000,25,0],barWidth:16,itemStyle:{color:'#d1d1d6',borderRadius:[0,6,6,0]}},
+      {name:'优化后',type:'bar',data:[34000,1,15],barWidth:16,itemStyle:{color:C.cyan,borderRadius:[0,6,6,0]}},
+    ],legend:{top:0,textStyle:{color:C.text2}}};
+  const setupOption=useMemo(()=>{
+    const sb=stats?.setupByProc??{Drawing:0,Stranding:0,Roping:0};
+    return {animationDuration:1400,animationEasing:EASE.barQuartic,tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
+      grid:{left:40,right:20,top:30,bottom:30},
+      xAxis:{type:'category',data:['拉丝','捻股','合绳'],axisLabel:{color:C.text},axisLine:{lineStyle:{color:C.grid}}},
+      yAxis:{type:'value',axisLabel:{color:C.text2},splitLine:{lineStyle:{color:C.grid}}},
+      series:[{type:'bar',data:[sb.Drawing,sb.Stranding,sb.Roping],barWidth:48,
+        itemStyle:{color:p=>[C.green,C.blue,C.purple][p.dataIndex%3],borderRadius:[8,8,0,0]},
+        label:{show:true,position:'top',color:C.text,fontWeight:600,formatter:'{c} 次'}}]};
+  },[stats]);
+  return h('section',{className:'present-slide'},
+    h('div',{className:'fade-up'},
+      h('div',{className:'slide-kicker'},'04 · 优化'),
+      h('h2',{className:'slide-title'},'稀疏图剪枝 + 负载均衡，让求解可行')
+    ),
+    h('div',{className:'opt-charts'},
+      h('div',{className:'chart-card fade-up',style:{animationDelay:'.2s'}},h('div',{className:'chart-title'},'优化前后对比'),h(EChart,{option:compareOption,height:300})),
+      h('div',{className:'chart-card fade-up',style:{animationDelay:'.32s'}},h('div',{className:'chart-title'},'各工序换型次数分布'),h(EChart,{option:setupOption,height:300}))
+    ),
+    h('div',{className:'opt-grid'},
+      rows.map((r,i)=>h('div',{key:r.label,className:'opt-card fade-up',style:{animationDelay:`${.45+i*.12}s`}},
+        h('div',{className:'opt-pct'},h(CountUp,{value:r.pct,suffix:'%'})),
+        h('div',{className:'opt-label'},r.label),
+        h('div',{className:'opt-detail'},r.before,' → ',h('strong',null,r.after))
+      ))
+    )
+  );
+}
+
+function SlideReschedule({ sim }){
+  const scenarios=sim?.scenarios??[];
+  const names=scenarios.map(s=>s.name), pert=scenarios.map(s=>s.total_perturbation_min), disrupted=scenarios.map(s=>s.disrupted_tasks);
+  const barOption=useMemo(()=>({animationDuration:1400,animationEasing:EASE.tensionBack,tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
+    grid:{left:40,right:20,top:30,bottom:30},
+    xAxis:{type:'category',data:names,axisLabel:{color:C.text},axisLine:{lineStyle:{color:C.grid}}},
+    yAxis:{type:'value',axisLabel:{color:C.text2},splitLine:{lineStyle:{color:C.grid}}},
+    series:[
+      {name:'扰动时长(分)',type:'bar',data:pert,barWidth:34,itemStyle:{color:p=>[C.blue,C.green,C.orange][p.dataIndex%3],borderRadius:[8,8,0,0]},label:{show:true,position:'top',color:C.text,fontWeight:600}},
+      {name:'重排任务数',type:'bar',data:disrupted,barWidth:34,itemStyle:{color:'rgba(0,0,0,.12)',borderRadius:[8,8,0,0]}},
+    ],legend:{top:0,textStyle:{color:C.text2}}}),[names,pert,disrupted]);
+  const radarOption=useMemo(()=>{
+    const maxPert=Math.max(...pert,1), maxDisrupted=Math.max(...disrupted,1);
+    return {animationDuration:1400,animationEasing:EASE.radarSmooth,tooltip:{},
+      radar:{indicator:[{name:'准时交付率',max:1},{name:'少扰动',max:1},{name:'重排少',max:1}],radius:'70%',
+        axisName:{color:C.text2},splitLine:{lineStyle:{color:C.grid}},
+        splitArea:{areaStyle:{color:['rgba(0,0,0,.02)','rgba(0,0,0,.04)']}}},
+      series:[{type:'radar',data:scenarios.map((s,i)=>({
+        name:s.name,value:[s.otd,1-s.total_perturbation_min/maxPert,1-s.disrupted_tasks/maxDisrupted],
+        lineStyle:{color:[C.blue,C.green,C.orange][i%3]},itemStyle:{color:[C.blue,C.green,C.orange][i%3]},areaStyle:{opacity:.12}
+      }))}],legend:{bottom:0,textStyle:{color:C.text2}}};
+  },[scenarios,pert,disrupted]);
+  return h('section',{className:'present-slide'},
+    h('div',{className:'fade-up'},
+      h('div',{className:'slide-kicker'},'05 · 动态重排'),
+      h('h2',{className:'slide-title'},'异常发生，三套方案可选')
+    ),
+    scenarios.length===0
+      ? h('p',{className:'fade-up slide-foot'},'正在加载三方案推演数据…')
+      : h('div',{className:'resched-grid'},
+          h('div',{className:'chart-card fade-up',style:{animationDelay:'.2s'}},h('div',{className:'chart-title'},'三方案扰动对比'),h(EChart,{option:barOption,height:300})),
+          h('div',{className:'chart-card fade-up',style:{animationDelay:'.35s'}},h('div',{className:'chart-title'},'三方案能力雷达'),h(EChart,{option:radarOption,height:300}))
+        ),
+    h('p',{className:'fade-up slide-foot',style:{animationDelay:'.5s'}},
+      h('strong',null,'方案 B 少扰动'),'：扰动最小、维持车间秩序；',
+      h('strong',null,'方案 C 高效率'),'：大调换效率。系统量化后果，',h('strong',null,'由人确认'),'。'
+    )
+  );
+}
+
+function SlideClose(){
+  const steps=['自动排产','风险发现','原因解释','异常重排','多方案推演','人工确认'];
+  const icons=['factory','alert','search','zap','chart','check'];
+  return h('section',{className:'present-slide'},
+    h('div',{className:'fade-up'},
+      h('div',{className:'slide-kicker'},'06 · 闭环'),
+      h('h2',{className:'slide-title'},'算得准 · 讲得清 · 改得动 · 人能控')
+    ),
+    h('div',{className:'close-ring fade-up',style:{animationDelay:'.3s'}},
+      h('div',{className:'close-ring-dash'}),
+      h('div',{className:'close-center'},
+        h(Icon,{name:'sparkles',size:38,color:'#fff'}), h('span',null,'智能决策闭环')
+      ),
+      steps.map((s,i)=>{
+        const angle=i*60-90;
+        return h('div',{key:s,className:'close-item',style:{transform:`rotate(${angle}deg) translate(200px) rotate(${-angle}deg)`}},
+          h('span',{className:'close-item-num'},i+1),
+          h(Icon,{name:icons[i],size:28,color:C.cyan}),
+          h('span',{className:'close-item-label'},s)
+        );
+      })
+    ),
+    h('p',{className:'fade-up slide-foot',style:{animationDelay:'.8s'}},'不是替你排，而是帮你做出更好的生产计划。')
+  );
+}
+
+/* ===================== 主组件 ===================== */
+const SLIDE_COUNT = 11;
+
+function Presentation(){
+  const [current,setCurrent]=useState(0);
+  const kpi = mockSchedule;
+  const sim = mockSim;
+  const stats = useMemo(()=>computeStats(kpi.scheduled_tasks),[kpi]);
+
+  useEffect(()=>{
+    const onKey=e=>{
+      if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown') setCurrent(c=>Math.min(c+1,SLIDE_COUNT-1));
+      if(e.key==='ArrowLeft'||e.key==='PageUp') setCurrent(c=>Math.max(c-1,0));
+    };
+    window.addEventListener('keydown',onKey);
+    return ()=>window.removeEventListener('keydown',onKey);
+  },[]);
+
+  const go=d=>setCurrent(c=>Math.min(SLIDE_COUNT-1,Math.max(0,c+d)));
+
+  const slides=[
+    h(SlideCover,{key:'cover'}),
+    h(SlideProblem,{key:'problem'}),
+    h(SlideImprovement,{key:'imp1',index:0}),
+    h(SlideImprovement,{key:'imp2',index:1}),
+    h(SlideImprovement,{key:'imp3',index:2}),
+    h(SlideImprovement,{key:'imp4',index:3}),
+    h(SlideImprovement,{key:'imp5',index:4}),
+    h(SlideKPI,{key:'kpi',kpi,stats}),
+    h(SlideOptimization,{key:'opt',stats}),
+    h(SlideReschedule,{key:'resched',sim}),
+    h(SlideClose,{key:'close'}),
+  ];
+
+  return h('div',{className:'presentation'},
+    h('div',{className:'present-viewport',key:current}, slides[current]),
+    h('div',{className:'present-nav'},
+      h('button',{className:'present-arrow',onClick:()=>go(-1),disabled:current===0},
+        h(Icon,{name:'arrow-right',size:20,style:{transform:'rotate(180deg)'}})),
+      h('div',{className:'present-dots'},
+        Array.from({length:SLIDE_COUNT}).map((_,i)=>h('button',{key:i,className:'present-dot'+(i===current?' active':''),onClick:()=>setCurrent(i)}))
+      ),
+      h('button',{className:'present-arrow',onClick:()=>go(1),disabled:current===SLIDE_COUNT-1},
+        h(Icon,{name:'arrow-right',size:20}))
+    ),
+    h('div',{className:'present-hint'},'← → 键切换 · 共 '+SLIDE_COUNT+' 幕')
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(h(Presentation));
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+ortools
+pandas
+openpyxl
+fastapi
+pydantic
+uvicorn
+python-multipart
+openai>=1.0.0
+python-dotenv
