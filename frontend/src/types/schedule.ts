@@ -47,6 +47,14 @@ export interface KPIStats {
   makespan_minutes: number;
 }
 
+// 订单排产覆盖三分类：以全部输入订单为分母
+export interface OrderSummary {
+  total_orders: number;
+  fully_scheduled: number;
+  partially_scheduled: number;
+  unscheduled: number;
+}
+
 // ---- 后端 ScheduleResultResponse 的 DTO 映射（API 层输入）----
 
 export interface ScheduledTaskDTO {
@@ -109,6 +117,7 @@ export interface ScheduleAPIResponse {
   infeasible_reasons?: string[];
   cleaning_report?: CleaningReportDTO | null;
   imported_order_ids?: string[];
+  order_summary?: OrderSummary;
 }
 
 // ---- Phase 3: 动态重排与沙盘推演 ----

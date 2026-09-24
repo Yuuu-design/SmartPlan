@@ -27,7 +27,7 @@ function makeResponse(): ScheduleAPIResponse {
 
 describe('useScheduleStore.setScheduleData 数据映射', () => {
   beforeEach(() => {
-    useScheduleStore.setState({ tasks: {}, machines: [], links: [], kpis: null, conflictTaskIds: [] });
+    useScheduleStore.setState({ tasks: {}, machines: [], links: [], kpis: null });
   });
 
   it('process_type 大写转换 + spec/machine_name 填充', () => {
@@ -114,7 +114,7 @@ describe('useScheduleStore.setScheduleData 数据映射', () => {
 
 describe('useScheduleStore 交互动作', () => {
   beforeEach(() => {
-    useScheduleStore.setState({ tasks: {}, machines: [], links: [], kpis: null, conflictTaskIds: [] });
+    useScheduleStore.setState({ tasks: {}, machines: [], links: [], kpis: null });
     useScheduleStore.getState().setScheduleData(makeResponse());
   });
 
@@ -167,11 +167,10 @@ describe('useScheduleStore 交互动作', () => {
     expect(useScheduleStore.getState().focusedOrderId).toBeNull();
   });
 
-  it('updateTaskTime 更新开始时间并检测冲突', () => {
-    // 把 O-1-Stranding 挪到与 O-1-Drawing 重叠的位置（也违反先后）
+  it('updateTaskTime 更新开始时间并顺延结束时间', () => {
     useScheduleStore.getState().updateTaskTime('O-1-Stranding', 30);
     const task = useScheduleStore.getState().tasks['O-1-Stranding'];
     expect(task.start_time).toBe(30);
-    expect(task.status).toBe('CONFLICT');
+    expect(task.end_time).toBe(30 + task.duration_minutes);
   });
 });

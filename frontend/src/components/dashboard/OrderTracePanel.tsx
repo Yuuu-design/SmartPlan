@@ -161,7 +161,7 @@ export function OrderTracePanel() {
       )}
 
       {!highlightedOrderId && !notFound && (
-        <div className="trace-hint">输入订单号回车：该单 拉丝→捻股→合绳 全部工序自动收拢到可视区，左侧显示所用设备；双击任务块同样可进入/退出聚焦</div>
+        <div className="trace-focus-hint">双击任务块可进入 / 退出聚焦</div>
       )}
     </div>
   );

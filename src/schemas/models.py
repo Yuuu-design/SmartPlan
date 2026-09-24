@@ -152,6 +152,15 @@ class DecisionReason(BaseModel):
     reasons: list[str] = Field(default_factory=list)
 
 
+class OrderScheduleSummary(BaseModel):
+    """订单排产覆盖情况：以全部输入订单为分母，按实际排出工序数三分类。"""
+
+    total_orders: int = 0              # 参与排产的订单总数
+    fully_scheduled: int = 0           # 全部工序均已排产
+    partially_scheduled: int = 0       # 仅部分工序排产（1~2 道）
+    unscheduled: int = 0               # 无任何工序排产（如规格无设备可加工）
+
+
 class DirtyRow(BaseModel):
     """清洗中被剔除的脏数据行。"""
 
@@ -188,6 +197,8 @@ class ScheduleResultResponse(BaseModel):
     # 上传排产时携带的清洗报告与本次导入的订单号（JSON 默认排产不带）
     cleaning_report: CleaningReport | None = None
     imported_order_ids: list[str] = Field(default_factory=list)
+    # 订单排产覆盖三分类（已排/部分/未排），以全部输入订单为分母
+    order_summary: OrderScheduleSummary = Field(default_factory=OrderScheduleSummary)
 
     def snapshot(self) -> "ScheduleResultResponse":
         """深拷贝一份排产结果，作为沙盘推演的基线快照(V1)，避免推演覆盖真实数据。"""

@@ -19,6 +19,10 @@ dist/
 # 编辑器 / 系统
 .vscode/
 .idea/
+.trae/
 .DS_Store
 Thumbs.db
 *.log
+
+# 本地测试产物（含会话 Cookie，严禁提交）
+cookies.txt

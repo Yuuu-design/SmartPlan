@@ -24,13 +24,14 @@ try:
 except ImportError:  # python-dotenv 未安装时忽略，继续走系统环境变量
     pass
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 
 try:
     from openai import OpenAI
 except ImportError:  # pragma: no cover
     OpenAI = None  # type: ignore
 
+from src.auth.dependencies import get_current_user
 from src.core.config import CONFIG
 from src.data.loader import load_and_validate_data
 from src.scheduler.decoder import decode, run_schedule
@@ -46,7 +47,7 @@ from src.schemas.models import (
     SimulationResponse,
 )
 
-router = APIRouter(prefix="/api/v1", tags=["copilot"])
+router = APIRouter(prefix="/api/v1", tags=["copilot"], dependencies=[Depends(get_current_user)])
 
 BASE_DIR = Path(__file__).resolve().parents[3]
 

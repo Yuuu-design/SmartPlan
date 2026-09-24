@@ -8,7 +8,6 @@ beforeEach(() => {
   useScheduleStore.setState({
     tasks: {},
     machines: [],
-    conflictTaskIds: [],
     selectedTaskId: null,
     simulation: null,
   });

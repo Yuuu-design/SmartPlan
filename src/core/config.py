@@ -6,7 +6,12 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 @dataclass(frozen=True)
@@ -59,3 +64,38 @@ class SolverConfig:
 
 
 CONFIG = SolverConfig()
+
+
+_DEFAULT_DEV_SECRET = "dev-secret-change-me-32chars-min"
+_DEFAULT_CORS_ORIGINS = "http://localhost:5173"
+
+
+@dataclass(frozen=True)
+class AppConfig:
+    # 运行环境：dev(本地开发) / prod(生产)。非 dev 时强制要求显式配置密钥。
+    ENV: str = os.environ.get("SMARTPLAN_ENV", "dev").lower()
+    SECRET_KEY: str = os.environ.get("SMARTPLAN_SECRET_KEY", _DEFAULT_DEV_SECRET)
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 天
+    COOKIE_NAME: str = "smartplan_session"
+    SECURE_COOKIE: bool = False
+    SAMESITE: str = "lax"
+    DATABASE_URL: str = os.environ.get(
+        "DATABASE_URL",
+        "mysql+pymysql://root:123456@localhost:3306/today?charset=utf8mb4"
+    )
+    # 允许的跨域来源，逗号分隔；生产环境通过 SMARTPLAN_CORS_ORIGINS 显式配置
+    CORS_ORIGINS: tuple[str, ...] = tuple(
+        origin.strip()
+        for origin in os.environ.get("SMARTPLAN_CORS_ORIGINS", _DEFAULT_CORS_ORIGINS).split(",")
+        if origin.strip()
+    )
+
+    def __post_init__(self) -> None:
+        if self.ENV != "dev" and self.SECRET_KEY == _DEFAULT_DEV_SECRET:
+            raise RuntimeError(
+                "检测到非 dev 环境但未配置 SMARTPLAN_SECRET_KEY，"
+                "禁止使用默认开发密钥启动；请在环境变量中设置强随机密钥。"
+            )
+
+APP_CONFIG = AppConfig()

@@ -33,13 +33,12 @@ export function RightSidePanel() {
     }
   }, [focusedOrderId]);
   const tasks = useScheduleStore((s) => s.tasks);
-  const conflictTaskIds = useScheduleStore((s) => s.conflictTaskIds);
   const resolvedRiskOrderIds = useScheduleStore((s) => s.resolvedRiskOrderIds);
   const simulation = useScheduleStore((s) => s.simulation);
 
   const riskCount = useMemo(
-    () => selectRiskOrders(tasks, conflictTaskIds, resolvedRiskOrderIds).length,
-    [tasks, conflictTaskIds, resolvedRiskOrderIds],
+    () => selectRiskOrders(tasks, resolvedRiskOrderIds).length,
+    [tasks, resolvedRiskOrderIds],
   );
 
   return (

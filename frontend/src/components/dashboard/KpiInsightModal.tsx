@@ -31,8 +31,8 @@ const META: Record<
   KpiInsightType,
   { title: string; icon: IconName; sub: string }
 > = {
-  otd: { title: '准时交付率分析', icon: 'trend-up', sub: '订单合绳完工 vs 承诺交期' },
-  utilization: { title: '设备综合利用率分析', icon: 'chart', sub: '基于当前排产结果逐台推算负荷' },
+  otd: { title: '准时交付率分析', icon: 'trend-up', sub: '' },
+  utilization: { title: '设备综合利用率分析', icon: 'chart', sub: '' },
   setup: { title: '换型时长 / 次数分析', icon: 'wrench', sub: '规格切换在各设备上的耗时汇总' },
 };
 
@@ -89,7 +89,7 @@ export function KpiInsightModal({ type, onClose }: { type: KpiInsightType; onClo
             <span>{meta.title}</span>
           </div>
           <div className="ki-head-right">
-            <span className="ki-sub">{meta.sub}</span>
+            {meta.sub && <span className="ki-sub">{meta.sub}</span>}
             <button className="icon-btn" onClick={onClose} title="关闭 (Esc)">
               <Icon name="x" size={15} />
             </button>
@@ -261,33 +261,11 @@ function OtdBody({
         </div>
       </div>
 
-      <InsightSection icon="alert" tone="red" title="为什么是这个交付率（基于当前排产推算）">
-        <li>
-          共 {otd.totalOrders} 个订单，{otd.onTime} 个合绳完工不晚于承诺交期；{otd.delayed} 个订单延期，
-          拉低交付率 {(otd.delayed / Math.max(1, otd.totalOrders) * 100).toFixed(1)} 个百分点。
-        </li>
-        {topMachine && (
-          <li>
-            延期单 {machineConcentration}% 集中在
-            <b> {topMachine.machine_name}</b>
-            （{topMachine.count} 单），该合绳工序段的关键机台产能被挤占是直接原因。
-          </li>
-        )}
-        {otd.delayed > 0 && (
-          <li>
-            延期单最晚合绳完工仅在排产开始后 {hours(otd.delayedPeakEndMin)}
-            {makespanMin > 0 ? `，而全部订单完工跨度为 ${hours(makespanMin)}` : ''}
-            ——交期窗口早于该机台物理上的最早可完工时刻，属于急单/交期过紧，而非整体产能不足。
-          </li>
-        )}
-        {otd.delayed === 0 && <li>全部订单均可在承诺交期内完工，当前排产无交付缺口。</li>}
-      </InsightSection>
-
       {otd.delayedOrders.length > 0 && (
         <div className="ki-section">
           <div className="ki-section-title">
             <Icon name="package" size={14} color="var(--red)" />
-            延期订单清单（点击可直接推演改进方案）
+            延期订单清单
           </div>
           <div className="ki-order-list">
             {otd.delayedOrders.map((o) => (
@@ -305,23 +283,6 @@ function OtdBody({
           </div>
         </div>
       )}
-
-      <InsightSection icon="zap" tone="blue" title="如何提高准时交付率">
-        <li>
-          <b>专项优先：</b>对延期单施加 20 倍延期惩罚重排，让其优先占用关键机台（上方清单可一键进入推演）。
-        </li>
-        <li>
-          <b>加班赶工 / 增开机台：</b>压缩各工序工时或为瓶颈合绳段增加并行机台，系统会给出三种手段的扰动、
-          换型与完工提前量对比。
-        </li>
-        <li>
-          <b>交期协商与提前投产：</b>交期早于最早可完工时刻的订单，物理上无法完全救回，应同步与客户协商交期
-          或安排提前投产（推演无法救回时面板会明确提示剩余延期分钟）。
-        </li>
-        <li>
-          <b>前序衔接：</b>拉丝→捻股→合绳按最小间隔衔接（规则 R5/R6），减少在制等待，为合绳段争取更早开工。
-        </li>
-      </InsightSection>
     </div>
   );
 }
@@ -436,18 +397,13 @@ function UtilBody({ util }: { util: ReturnType<typeof analyzeUtilization> }) {
     };
   }, [util]);
 
-  const bottlenecks = util.machines.filter((m) => m.rate >= 0.9);
-  const slack = [...util.machines].filter((m) => m.rate < 0.4).sort((a, b) => a.rate - b.rate);
-  const busiestProc = PROCESS_TYPES.reduce((a, b) => (util.byProcess[b] > util.byProcess[a] ? b : a));
-  const slackProc = PROCESS_TYPES.reduce((a, b) => (util.byProcess[b] < util.byProcess[a] ? b : a));
-
   return (
     <div className="ki-body">
       <StatStrip
         items={[
           { label: '综合利用率', value: pct(util.overall, 1), tone: 'blue' },
           { label: '活跃设备', value: String(util.machines.length) },
-          { label: '瓶颈设备 ≥90%', value: String(bottlenecks.length), tone: bottlenecks.length ? 'red' : 'green' },
+          { label: '瓶颈设备 ≥90%', value: String(util.machines.filter((m) => m.rate >= 0.9).length), tone: util.machines.some((m) => m.rate >= 0.9) ? 'red' : 'green' },
           { label: '跨度内总空闲', value: hours(util.totalIdleMin) },
         ]}
       />
@@ -467,66 +423,9 @@ function UtilBody({ util }: { util: ReturnType<typeof analyzeUtilization> }) {
           <EChart option={procBarOption} height={230} />
         </div>
         <div className="ki-chart-card ki-chart-wide">
-          <div className="ki-chart-title">设备负荷 Top 10（占该设备活跃跨度，蓝=加工/橙=换型/灰=空闲）</div>
           <EChart option={loadOption} height={280} />
         </div>
       </div>
-
-      <InsightSection icon="chart" tone="blue" title="设备利用率数据汇总与原因分类">
-        <li>
-          按后端口径（加工时长 ÷ 设备活跃跨度）重算综合利用率为 <b>{pct(util.overall)}</b>
-          ，总加工 {hours(util.totalProcMin)}、换型 {hours(util.totalSetupMin)}、跨度内空闲
-          {hours(util.totalIdleMin)}。
-        </li>
-        <li>
-          工序间负荷不均：<b>{PROC_SHORT[busiestProc]}</b>段 {pct(util.byProcess[busiestProc], 0)} 最紧，
-          <b> {PROC_SHORT[slackProc]}</b>段仅 {pct(util.byProcess[slackProc], 0)}
-          ，在制批次在前序/后序间存在等待。
-        </li>
-        {bottlenecks.length > 0 && (
-          <li>
-            瓶颈设备（≥90%）：
-            {bottlenecks
-              .slice(0, 4)
-              .map((m) => `${m.machine_name} ${pct(m.rate, 0)}`)
-              .join('、')}
-            ，几乎无缓冲，故障/插单会直接传导为延期。
-          </li>
-        )}
-        {slack.length > 0 && (
-          <li>
-            低负荷设备（&lt;40%）尚有承接能力：
-            {slack
-              .slice(0, 4)
-              .map((m) => `${m.machine_name} ${pct(m.rate, 0)}`)
-              .join('、')}
-            ，可接收同规格调拨任务。
-          </li>
-        )}
-        <li>
-          负荷分层：{util.tiers.map((t) => `${t.range} ${t.count} 台`).join('　·　')}。
-        </li>
-      </InsightSection>
-
-      <InsightSection icon="zap" tone="green" title="提高利用率 / 缓解瓶颈的方法">
-        <li>
-          <b>瓶颈段扩能：</b>对
-          {bottlenecks.slice(0, 2).map((m) => m.machine_name).join('、') || '高负荷机台'}
-          安排加班或增开同规格并行机台，CP-SAT 重排会自动把任务摊到新产能上。
-        </li>
-        <li>
-          <b>跨机台均衡：</b>将瓶颈机台上规格兼容的任务调拨给
-          {slack.slice(0, 2).map((m) => m.machine_name).join('、') || '低负荷机台'}
-          等有余量设备（规格区间匹配为硬约束，求解器保证可加工才调拨）。
-        </li>
-        <li>
-          <b>削峰填谷：</b>非急单适当后移让出瓶颈时段；同规格订单连续投放，减少机台切换造成的空转。
-        </li>
-        <li>
-          <b>关注换型挤占：</b>换型占活跃跨度 {pct(util.totalSetupMin / Math.max(1, util.totalSpanMin))}
-          ，换型最多的设备优化空间最大（见「换型时长」卡片钻取）。
-        </li>
-      </InsightSection>
     </div>
   );
 }
@@ -613,11 +512,6 @@ function SetupBody({ setup }: { setup: ReturnType<typeof analyzeSetup> }) {
     [setup],
   );
 
-  const top3 = setup.topMachines.slice(0, 3);
-  const top3Min = top3.reduce((s, m) => s + m.setupMin, 0);
-  const machineCount = setup.topMachines.length;
-  const busiestProc = [...setup.byProcess].sort((a, b) => b.setupMin - a.setupMin)[0];
-
   return (
     <div className="ki-body">
       <StatStrip
@@ -639,54 +533,6 @@ function SetupBody({ setup }: { setup: ReturnType<typeof analyzeSetup> }) {
           <EChart option={donutOption} height={250} />
         </div>
       </div>
-
-      <InsightSection icon="wrench" tone="blue" title="换型数据汇总与原因分类">
-        <li>
-          当前排产共发生 <b>{setup.totalSetupCount}</b> 次规格切换，合计
-          <b> {hours(setup.totalSetupMin)}</b>，平均单次 {setup.avgSetupMin.toFixed(0)} 分钟；
-          占全部设备活跃跨度的 {pct(setup.setupShareOfSpan)}，与加工、空闲共同构成设备时间。
-        </li>
-        {top3.length > 0 && (
-          <li>
-            换型最集中的设备：
-            {top3.map((m) => `${m.machine_name}（${m.setupCount} 次 / ${hours(m.setupMin)}）`).join('、')}
-            ；Top {Math.min(3, machineCount)} 设备贡献了
-            {pct(setup.totalSetupMin > 0 ? top3Min / setup.totalSetupMin : 0)} 的换型时长。
-          </li>
-        )}
-        {busiestProc && busiestProc.setupMin > 0 && (
-          <li>
-            按工序：
-            {setup.byProcess
-              .filter((p) => p.setupMin > 0)
-              .map((p) => `${p.label} ${p.count} 次 / ${hours(p.setupMin)}`)
-              .join('、')}
-            ，{busiestProc.label}段规格切换最频繁，是换型优化的首要工序。
-          </li>
-        )}
-        <li>
-          换型主要来自相邻任务规格不一致（直径/结构差异超出免换型阈值），小批量、多规格订单穿插排产会显著推高次数。
-        </li>
-      </InsightSection>
-
-      <InsightSection icon="zap" tone="green" title="降低换型时长的方法">
-        <li>
-          <b>同规格连续排产：</b>规则 R3 已让求解器优先把连续同规格/直径相近的任务排在同机台（免换型），
-          可进一步对{busiestProc ? busiestProc.label : '高频'}段收紧成组约束。
-        </li>
-        <li>
-          <b>规格族聚类：</b>把相近规格族固定分配给专用机台，减少
-          {top3.slice(0, 2).map((m) => m.machine_name).join('、') || '高换型机台'}
-          上的来回切换。
-        </li>
-        <li>
-          <b>小单合批：</b>同客户、同规格的小批量订单合并投产，以一次换型覆盖更多米数，直接摊薄单次换型成本。
-        </li>
-        <li>
-          <b>收益估算：</b>若换型次数压降 20%，可释放约 {hours(setup.totalSetupMin * 0.2)} 设备工时，
-          相当于在不增设备的情况下提升有效产能。
-        </li>
-      </InsightSection>
     </div>
   );
 }

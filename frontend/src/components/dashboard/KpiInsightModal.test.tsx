@@ -62,8 +62,6 @@ describe('KpiInsightModal 准时交付率', () => {
     expect(screen.getByText('50.0%')).toBeTruthy();
     expect(screen.getAllByTestId('echart').length).toBe(2);
     expect(screen.getByText('O2')).toBeTruthy();
-    expect(screen.getByText(/为什么是这个交付率/)).toBeTruthy();
-    expect(screen.getByText(/如何提高准时交付率/)).toBeTruthy();
   });
 
   it('点击延期订单行：选中该合绳任务并关闭弹窗（形成推演闭环）', () => {
@@ -89,8 +87,6 @@ describe('KpiInsightModal 设备利用率', () => {
     expect(screen.getByText('设备综合利用率分析')).toBeTruthy();
     expect(screen.getAllByText('100.0%').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/三工序设备利用率/)).toBeTruthy();
-    expect(screen.getByText(/设备负荷 Top 10/)).toBeTruthy();
-    expect(screen.getByText(/设备利用率数据汇总与原因分类/)).toBeTruthy();
   });
 });
 
@@ -101,6 +97,5 @@ describe('KpiInsightModal 换型', () => {
     expect(screen.getAllByTestId('echart').length).toBe(2);
     expect(screen.getByText(/换型时长 Top 10 设备/)).toBeTruthy();
     expect(screen.getByText(/设备活跃时间构成/)).toBeTruthy();
-    expect(screen.getByText(/降低换型时长的方法/)).toBeTruthy();
   });
 });

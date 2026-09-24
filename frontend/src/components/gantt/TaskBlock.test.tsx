@@ -45,7 +45,6 @@ describe('TaskBlock', () => {
           height={26}
           color="var(--green)"
           selected={false}
-          conflict={false}
           traced={false}
           zoomLevel={0.5}
           isDeviceView
@@ -70,7 +69,6 @@ describe('TaskBlock', () => {
           height={26}
           color="var(--green)"
           selected={false}
-          conflict={false}
           traced={false}
           zoomLevel={0.5}
           isDeviceView
@@ -95,7 +93,6 @@ describe('TaskBlock', () => {
           height={26}
           color="var(--green)"
           selected={false}
-          conflict={false}
           traced={false}
           zoomLevel={0.5}
           isDeviceView
@@ -122,7 +119,6 @@ describe('TaskBlock', () => {
           height={26}
           color="var(--green)"
           selected={false}
-          conflict={false}
           traced={false}
           zoomLevel={0.5}
           isDeviceView
@@ -154,7 +150,6 @@ describe('TaskBlock', () => {
           height={26}
           color="var(--green)"
           selected={false}
-          conflict={false}
           traced={false}
           zoomLevel={0.5}
           isDeviceView
@@ -189,7 +184,6 @@ describe('TaskBlock', () => {
           height={26}
           color="var(--green)"
           selected={false}
-          conflict={false}
           traced={false}
           zoomLevel={0.5}
           isDeviceView
@@ -226,7 +220,6 @@ describe('TaskBlock', () => {
           height={26}
           color="var(--green)"
           selected={false}
-          conflict={false}
           traced={false}
           zoomLevel={0.5}
           isDeviceView
@@ -253,7 +246,6 @@ describe('TaskBlock', () => {
           height={26}
           color="var(--green)"
           selected={false}
-          conflict={false}
           traced
           zoomLevel={0.5}
           isDeviceView

@@ -1,19 +1,12 @@
-// 排产数据获取层：开发期用 Mock，联调时把 USE_MOCK 置为 false 即走真实后端。
+// 排产数据获取层：统一走真实后端（经 Vite 代理 /api -> FastAPI）。
 
 import type { ScheduleAPIResponse, SimulationResponse, DisruptionEvent, CopilotResponse } from '../types/schedule';
-import { buildMockSchedule } from '../mock/mockSchedule';
-
-export const USE_MOCK = false;
+import { apiFetch } from './client';
 
 export async function fetchSchedule(): Promise<ScheduleAPIResponse> {
-  if (USE_MOCK) {
-    await new Promise((r) => setTimeout(r, 300));
-    return buildMockSchedule();
-  }
-
   // 滚动排产：默认求解近期 50 单(秒级响应，Demo 即时交互)。
   // 需要展示全量 302 单硬核算力时，把 limit_orders 改为 null。
-  const res = await fetch('/api/v1/schedule/run', {
+  const res = await apiFetch('/api/v1/schedule/run', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ limit_orders: 50 }),
@@ -36,7 +29,7 @@ export async function fetchScheduleWithFiles(
   if (limitOrders && limitOrders > 0) form.append('limit_orders', String(limitOrders));
   form.append('merge', String(merge));
 
-  const res = await fetch('/api/v1/schedule/run', { method: 'POST', body: form });
+  const res = await apiFetch('/api/v1/schedule/run', { method: 'POST', body: form });
   if (!res.ok) {
     let detail = `排产接口失败: ${res.status}`;
     try {
@@ -55,7 +48,7 @@ export async function simulateDisruption(
   limitOrders = 50,
   lockedTaskIds: string[] = [],
 ): Promise<SimulationResponse> {
-  const res = await fetch('/api/v1/schedule/simulate', {
+  const res = await apiFetch('/api/v1/schedule/simulate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ event, limit_orders: limitOrders, locked_task_ids: lockedTaskIds }),
@@ -66,7 +59,7 @@ export async function simulateDisruption(
 
 /** 风险改进：对单个延期订单生成改进方案（专项优先/加班赶工/增开机台）。 */
 export async function fetchRemediation(orderId: string, limitOrders = 50): Promise<SimulationResponse> {
-  const res = await fetch('/api/v1/schedule/remediate', {
+  const res = await apiFetch('/api/v1/schedule/remediate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ order_id: orderId, limit_orders: limitOrders }),
@@ -85,7 +78,7 @@ export async function fetchRemediation(orderId: string, limitOrders = 50): Promi
 }
 
 export async function copilotChat(message: string): Promise<CopilotResponse> {
-  const res = await fetch('/api/v1/copilot/chat', {
+  const res = await apiFetch('/api/v1/copilot/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message }),

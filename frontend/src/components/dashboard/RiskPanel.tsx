@@ -9,42 +9,34 @@ export interface RiskOrder {
   reason: string;
 }
 
-// 从任务集合中汇总延期/冲突订单（按订单去重），供面板列表与分段角标共用。
+// 从任务集合中汇总延期订单（按订单去重），供面板列表与分段角标共用。
 // resolvedOrderIds：已人工处置（运用改进方案）的订单，不再计入风险队列
 export function selectRiskOrders(
   tasks: Record<string, GanttTask>,
-  conflictTaskIds: string[],
   resolvedOrderIds: string[] = [],
 ): RiskOrder[] {
-  const conflictSet = new Set(conflictTaskIds);
   const resolvedSet = new Set(resolvedOrderIds);
   const byOrder = new Map<string, RiskOrder>();
   for (const t of Object.values(tasks)) {
     if (resolvedSet.has(t.order_id)) continue;
-    const isConflict = conflictSet.has(t.task_id) || t.status === 'CONFLICT';
-    const isDelayed = t.status === 'DELAYED';
-    if (!isConflict && !isDelayed) continue;
-    const reason = isConflict
-      ? `工序冲突：${t.process_type} 与设备/前序存在重叠或先后违规`
-      : '交期延期风险';
+    if (t.status !== 'DELAYED') continue;
     if (!byOrder.has(t.order_id)) {
-      byOrder.set(t.order_id, { order_id: t.order_id, task_id: t.task_id, reason });
+      byOrder.set(t.order_id, { order_id: t.order_id, task_id: t.task_id, reason: '交期延期风险' });
     }
   }
   return Array.from(byOrder.values());
 }
 
-// 风险与异常观测面板：列出延期/冲突订单，点击定位到甘特图
+// 风险与异常观测面板：列出延期订单，点击定位到甘特图
 export function RiskPanel({ onLocate }: { onLocate?: () => void }) {
   const tasks = useScheduleStore((s) => s.tasks);
-  const conflictTaskIds = useScheduleStore((s) => s.conflictTaskIds);
   const resolvedRiskOrderIds = useScheduleStore((s) => s.resolvedRiskOrderIds);
   const setFocusTask = useScheduleStore((s) => s.setFocusTask);
   const setSelectedTask = useScheduleStore((s) => s.setSelectedTask);
 
   const riskOrders = useMemo(
-    () => selectRiskOrders(tasks, conflictTaskIds, resolvedRiskOrderIds),
-    [tasks, conflictTaskIds, resolvedRiskOrderIds],
+    () => selectRiskOrders(tasks, resolvedRiskOrderIds),
+    [tasks, resolvedRiskOrderIds],
   );
 
   function locate(order: RiskOrder) {

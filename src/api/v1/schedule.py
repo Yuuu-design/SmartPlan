@@ -12,10 +12,11 @@ import math
 import tempfile
 from pathlib import Path
 
-from fastapi import APIRouter, FastAPI, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from src.auth.dependencies import get_current_user
 from src.core.config import CONFIG
 from src.data.loader import (
     COL_DUE,
@@ -44,9 +45,8 @@ from src.schemas.models import (
     ScenarioResult,
     SimulationResponse,
 )
-from src.api.v1.copilot import router as copilot_router
 
-router = APIRouter(prefix="/api/v1", tags=["schedule"])
+router = APIRouter(prefix="/api/v1", tags=["schedule"], dependencies=[Depends(get_current_user)])
 
 # 项目根 = shenghu-smartplan/ (src/api/v1/schedule.py 上溯 3 级)
 BASE_DIR = Path(__file__).resolve().parents[3]
@@ -470,8 +470,3 @@ def _as_int(value) -> int | None:
         return int(str(value))
     except (TypeError, ValueError):
         return None
-
-
-app = FastAPI(title="SHENGHU SmartPlan", version="1.0.0")
-app.include_router(router)
-app.include_router(copilot_router)

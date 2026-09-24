@@ -5,6 +5,7 @@ import { FactoryScene } from './FactoryScene';
 import { CameraRig } from './CameraRig';
 import { findPeakTime, workshopSnapshotAt } from './workshopSelectors';
 import { layoutMachines } from './machineLayout';
+import { OrderScheduleDistCard } from './OrderScheduleDistCard';
 import { useScheduleStore } from '../../store/useScheduleStore';
 
 /**
@@ -22,13 +23,6 @@ export function WorkshopBoard() {
 
   const peakTime = useMemo(() => findPeakTime(taskList), [taskList]);
   const snapshot = useMemo(() => workshopSnapshotAt(taskList, peakTime), [taskList, peakTime]);
-
-  const completedKm = (snapshot.completedMeters / 1000).toFixed(1);
-  const liveOtd =
-    snapshot.completedOrderCount > 0
-      ? Math.round((snapshot.onTimeOrderCount / snapshot.completedOrderCount) * 100)
-      : null;
-  const otdClass = liveOtd === null ? '' : liveOtd >= 80 ? 'ws-green' : 'ws-red';
 
   const layout = useMemo(() => layoutMachines(machines), [machines]);
 
@@ -99,31 +93,7 @@ export function WorkshopBoard() {
         <div className="ws-hud-sub">当前排产计划 · 三工序车间数字孪生</div>
       </div>
 
-      <div className="ws-hud ws-hud-stats">
-        <div className="ws-stat-row">
-          <div className="ws-stat">
-            <span className="ws-stat-num">{snapshot.activeOrderCount}</span>
-            <span className="ws-stat-label">在制订单</span>
-          </div>
-          <div className="ws-stat">
-            <span className="ws-stat-num ws-green">{completedKm}</span>
-            <span className="ws-stat-label">完工 km</span>
-          </div>
-          <div className="ws-stat">
-            <span className={`ws-stat-num ${otdClass}`}>{liveOtd === null ? '--' : `${liveOtd}%`}</span>
-            <span className="ws-stat-label">实时准时率</span>
-          </div>
-        </div>
-        <div className="ws-stat-sub">
-          <span className="ws-dot ws-dot-run" />
-          运行 {snapshot.runningCount}
-          <span className="ws-dot ws-dot-setup" />
-          换型 {snapshot.setupCount}
-          <span className="ws-dot ws-dot-idle" />
-          待机 {snapshot.idleCount}
-          <span className="ws-stat-total">共 {snapshot.machineCount} 台</span>
-        </div>
-      </div>
+      <OrderScheduleDistCard />
     </div>
   );
 }

@@ -26,7 +26,6 @@ function ganttTask(over: Partial<GanttTask> = {}): GanttTask {
 beforeEach(() => {
   useScheduleStore.setState({
     tasks: {},
-    conflictTaskIds: [],
     resolvedRiskOrderIds: [],
     selectedTaskId: null,
     simulation: null,
@@ -34,14 +33,14 @@ beforeEach(() => {
 });
 
 describe('selectRiskOrders', () => {
-  it('汇总延期/冲突订单，按订单去重', () => {
+  it('汇总延期订单，按订单去重', () => {
     const tasks = {
       a: ganttTask({ task_id: 'a', order_id: 'O-DELAY', status: 'DELAYED' }),
-      b: ganttTask({ task_id: 'b', order_id: 'O-CONFLICT', status: 'ON_TIME' }),
-      c: ganttTask({ task_id: 'c', order_id: 'O-OK', status: 'ON_TIME' }),
+      b: ganttTask({ task_id: 'b', order_id: 'O-OK', status: 'ON_TIME' }),
+      c: ganttTask({ task_id: 'c', order_id: 'O-OK2', status: 'ON_TIME' }),
     };
-    const risks = selectRiskOrders(tasks, ['b']);
-    expect(risks.map((r) => r.order_id).sort()).toEqual(['O-CONFLICT', 'O-DELAY']);
+    const risks = selectRiskOrders(tasks);
+    expect(risks.map((r) => r.order_id).sort()).toEqual(['O-DELAY']);
   });
 
   it('已处置订单不再计入风险队列', () => {
@@ -49,7 +48,7 @@ describe('selectRiskOrders', () => {
       a: ganttTask({ task_id: 'a', order_id: 'O-DELAY', status: 'DELAYED' }),
       b: ganttTask({ task_id: 'b', order_id: 'O-DELAY', process_type: 'STRANDING', status: 'ON_TIME' }),
     };
-    expect(selectRiskOrders(tasks, [], ['O-DELAY'])).toEqual([]);
+    expect(selectRiskOrders(tasks, ['O-DELAY'])).toEqual([]);
   });
 });
 
@@ -121,38 +120,5 @@ describe('RiskPanel 风险处置闭环', () => {
 
     expect(screen.getByText('O-1')).toBeTruthy();
     expect(useScheduleStore.getState().resolvedRiskOrderIds).toEqual([]);
-  });
-
-  it('setScheduleData 载入新排程时作废旧的客户端冲突标记', () => {
-    useScheduleStore.setState({ conflictTaskIds: ['stale-id'] });
-    const response: ScheduleAPIResponse = {
-      status: 'ok',
-      scheduled_tasks: [
-        {
-          task_id: 't1',
-          order_id: 'O-1',
-          process_type: 'Roping',
-          machine_id: '8246',
-          start_time: 0,
-          end_time: 60,
-          duration_minutes: 60,
-          setup_time: 0,
-          status: 'ON_TIME',
-        },
-      ],
-      kpis: {
-        otd: 1,
-        utilization: 0.5,
-        utilization_by_process: {},
-        tardy_orders: 0,
-        total_setup_count: 0,
-        makespan: 60,
-      },
-      decision_reasons: [],
-    };
-    act(() => {
-      useScheduleStore.getState().setScheduleData(response);
-    });
-    expect(useScheduleStore.getState().conflictTaskIds).toEqual([]);
   });
 });

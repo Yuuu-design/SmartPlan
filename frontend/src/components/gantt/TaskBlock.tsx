@@ -11,7 +11,6 @@ interface TaskBlockProps {
   height: number;
   color: string;
   selected: boolean;
-  conflict: boolean;
   traced: boolean;
   zoomLevel: number;
   isDeviceView: boolean;
@@ -53,7 +52,6 @@ export function TaskBlock({
   height,
   color,
   selected,
-  conflict,
   traced,
   zoomLevel,
   isDeviceView,
@@ -197,7 +195,7 @@ export function TaskBlock({
         </g>
       )}
       <g
-        className={`task-block${task.is_locked ? ' locked' : ''}${selected ? ' selected' : ''}${conflict ? ' conflict' : ''}${traced ? ' traced' : ''}${task.imported ? ' imported' : ''}${readOnly ? ' readonly' : ''}`}
+        className={`task-block${task.is_locked ? ' locked' : ''}${selected ? ' selected' : ''}${traced ? ' traced' : ''}${task.imported ? ' imported' : ''}${readOnly ? ' readonly' : ''}`}
         transform={`translate(${x}, ${y})`}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}

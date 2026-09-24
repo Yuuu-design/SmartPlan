@@ -9,6 +9,7 @@ from src.scheduler.solver import solve
 from src.schemas.models import (
     DecisionReason,
     KPI,
+    OrderScheduleSummary,
     ProcessType,
     ScheduledTask,
     ScheduleInputData,
@@ -177,11 +178,53 @@ def _build_reasons(handles: dict, solver, scheduled: list[ScheduledTask]) -> lis
     return reasons
 
 
+def _order_schedule_summary(
+    input_data: ScheduleInputData, scheduled: list[ScheduledTask]
+) -> OrderScheduleSummary:
+    """以全部输入订单为分母，按实际排出工序数三分类。
+
+    每单应排工序数取 input_data.tasks 的实际条数（正常为 3）；
+    已排数取 scheduled_tasks 中该订单的条数：
+    全部排出=已排产，排出 1~2 道=部分排产，0 道=未排产。
+    """
+    expected_by_order: dict[str, int] = defaultdict(int)
+    for t in input_data.tasks:
+        expected_by_order[t.order_id] += 1
+
+    scheduled_by_order: dict[str, int] = defaultdict(int)
+    for s in scheduled:
+        scheduled_by_order[s.order_id] += 1
+
+    fully = partial = unscheduled = 0
+    # 以输入订单表为权威分母，覆盖“一道工序任务都未构建”的极端情况
+    order_ids = {o.order_id for o in input_data.orders} | set(expected_by_order)
+    for oid in order_ids:
+        done = scheduled_by_order.get(oid, 0)
+        expected = expected_by_order.get(oid, 0)
+        if done == 0:
+            unscheduled += 1
+        elif expected > 0 and done >= expected:
+            fully += 1
+        else:
+            partial += 1
+
+    return OrderScheduleSummary(
+        total_orders=len(order_ids),
+        fully_scheduled=fully,
+        partially_scheduled=partial,
+        unscheduled=unscheduled,
+    )
+
+
 def decode(handles: dict, solver, status: str) -> ScheduleResultResponse:
     """把求解器状态与变量取值转成标准响应结构。"""
     if status == "INFEASIBLE":
         reasons = analyze_infeasible(handles["input_data"], handles["horizon"])
-        return ScheduleResultResponse(status=status, infeasible_reasons=reasons)
+        return ScheduleResultResponse(
+            status=status,
+            infeasible_reasons=reasons,
+            order_summary=_order_schedule_summary(handles["input_data"], []),
+        )
 
     if status == "UNKNOWN":
         # 时间限制内未取得(或未验证)可行解；此时调用 solver.Value 可能异常，
@@ -192,6 +235,7 @@ def decode(handles: dict, solver, status: str) -> ScheduleResultResponse:
                 "求解器在时间限制内未找到可行排产方案；建议减少订单量、"
                 "调大时间窗(horizon)或放宽候选设备数。"
             ],
+            order_summary=_order_schedule_summary(handles["input_data"], []),
         )
 
     scheduled, _setup = _decode_schedule(handles, solver)
@@ -199,7 +243,11 @@ def decode(handles: dict, solver, status: str) -> ScheduleResultResponse:
     if not scheduled:
         reasons = analyze_infeasible(handles["input_data"], handles["horizon"])
         reasons.insert(0, f"求解器状态 {status}，未取得可行解(时间窗/约束过紧)。")
-        return ScheduleResultResponse(status=status, infeasible_reasons=reasons)
+        return ScheduleResultResponse(
+            status=status,
+            infeasible_reasons=reasons,
+            order_summary=_order_schedule_summary(handles["input_data"], []),
+        )
 
     _annotate_scheduled(scheduled, handles)
 
@@ -208,6 +256,7 @@ def decode(handles: dict, solver, status: str) -> ScheduleResultResponse:
         scheduled_tasks=scheduled,
         kpis=_compute_kpis(handles, solver, scheduled),
         decision_reasons=_build_reasons(handles, solver, scheduled),
+        order_summary=_order_schedule_summary(handles["input_data"], scheduled),
     )
 
 
@@ -321,6 +370,7 @@ def _greedy_result(input_data: ScheduleInputData) -> ScheduleResultResponse:
         kpis=kpis,
         decision_reasons=[],
         infeasible_reasons=["CP-SAT 未在限时内找到更优解，返回贪心启发式可行解。"],
+        order_summary=_order_schedule_summary(input_data, scheduled),
     )
 
 

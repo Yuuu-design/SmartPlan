@@ -7,3 +7,10 @@ uvicorn
 python-multipart
 openai>=1.0.0
 python-dotenv
+sqlalchemy>=2.0
+pymysql>=1.1
+cryptography>=42
+python-jose[cryptography]>=3.3
+passlib[bcrypt]>=1.7
+bcrypt>=4.1
+email-validator>=2.1

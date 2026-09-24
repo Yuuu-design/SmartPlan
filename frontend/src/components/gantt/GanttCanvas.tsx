@@ -48,7 +48,6 @@ export function GanttCanvas() {
   const viewMode = useScheduleStore((s) => s.viewMode);
   const zoomLevel = useScheduleStore((s) => s.zoomLevel);
   const selectedTaskId = useScheduleStore((s) => s.selectedTaskId);
-  const conflictTaskIds = useScheduleStore((s) => s.conflictTaskIds);
   const resolvedRiskOrderIds = useScheduleStore((s) => s.resolvedRiskOrderIds);
   const focusTaskId = useScheduleStore((s) => s.focusTaskId);
   const showOnlyRisk = useScheduleStore((s) => s.showOnlyRisk);
@@ -68,8 +67,6 @@ export function GanttCanvas() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  // 冲突 id 集合
-  const conflictSet = useMemo(() => new Set(conflictTaskIds), [conflictTaskIds]);
   // 已处置风险订单集合：恢复正常颜色，不再计入风险过滤
   const resolvedSet = useMemo(() => new Set(resolvedRiskOrderIds), [resolvedRiskOrderIds]);
 
@@ -81,12 +78,12 @@ export function GanttCanvas() {
         .filter(
           (t) =>
             !resolvedSet.has(t.order_id) &&
-            (t.status === 'DELAYED' || t.status === 'CONFLICT' || conflictSet.has(t.task_id)),
+            t.status === 'DELAYED',
         )
         .map((t) => t.order_id),
     );
     return all.filter((t) => riskOrders.has(t.order_id));
-  }, [tasks, showOnlyRisk, conflictSet, resolvedSet]);
+  }, [tasks, showOnlyRisk, resolvedSet]);
 
   // 双击单号聚焦：该单 拉丝→捻股→合绳 工序链（按工序顺序），其余单号全部隐藏
   const isFocus = focusedOrderId !== null;
@@ -583,7 +580,6 @@ export function GanttCanvas() {
                     height={p.height}
                     color={taskColor(t, resolvedSet.has(t.order_id))}
                     selected={selectedTaskId === t.task_id}
-                    conflict={!resolvedSet.has(t.order_id) && conflictSet.has(t.task_id)}
                     traced={focusedOrderId === t.order_id || highlightedOrderId === t.order_id}
                     zoomLevel={activeZoom}
                     isDeviceView={focusedOrderId !== null || viewMode === 'MACHINE'}

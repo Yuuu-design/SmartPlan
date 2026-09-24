@@ -7,6 +7,7 @@ import type {
   GanttTask,
   KPIStats,
   Machine,
+  OrderSummary,
   PrecedenceLink,
   ProcessType,
   ScheduleAPIResponse,
@@ -14,7 +15,6 @@ import type {
   ViewMode,
 } from '../types/schedule';
 import { PROCESS_ORDER } from '../types/schedule';
-import { checkConflict } from '../utils/ganttHelpers';
 
 export interface BaselinePosition {
   start_time: number;
@@ -26,13 +26,13 @@ interface ScheduleState {
   machines: Machine[];
   links: PrecedenceLink[];
   kpis: KPIStats | null;
+  orderSummary: OrderSummary | null;
   decisionReasons: Record<string, string[]>;
   selectedTaskId: string | null;
   focusTaskId: string | null;
   viewMode: ViewMode;
   zoomLevel: number; // 像素/分钟
   isDragging: boolean;
-  conflictTaskIds: string[];
   showOnlyRisk: boolean;
   showDependencyLines: boolean; // 工序依赖连线（拉丝→捻股→合绳）全局显示开关
   highlightedOrderId: string | null; // 单号追踪/双击临时高亮的订单：只画该单的两条依赖线
@@ -53,7 +53,6 @@ interface ScheduleState {
   setScheduleData: (response: ScheduleAPIResponse) => void;
   toggleTaskLock: (taskId: string) => void;
   updateTaskTime: (taskId: string, newStartTime: number, newMachineId?: string) => void;
-  highlightConflicts: () => void;
   setZoomLevel: (zoom: number) => void;
   zoomIn: () => void;
   zoomOut: () => void;
@@ -85,13 +84,13 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
   machines: [],
   links: [],
   kpis: null,
+  orderSummary: null,
   decisionReasons: {},
   selectedTaskId: null,
   focusTaskId: null,
   viewMode: 'ORDER',
   zoomLevel: INITIAL_ZOOM,
   isDragging: false,
-  conflictTaskIds: [],
   showOnlyRisk: false,
   // 默认隐藏全量依赖曲线，仅在主动开启或单号追踪/双击时按需显示
   showDependencyLines: false,
@@ -173,9 +172,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       machines: Array.from(machineSet.values()),
       links,
       kpis,
+      orderSummary: response.order_summary ?? null,
       decisionReasons,
-      // 全新服务端排程：旧的客户端冲突标记作废，需重新点“冲突检测”
-      conflictTaskIds: [],
       highlightedOrderId: null,
       focusedOrderId: null,
       importedOrderIds: response.imported_order_ids ?? [],
@@ -203,27 +201,10 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
         end_time: newStartTime + task.duration_minutes,
         machine_id: newMachineId ?? task.machine_id,
       };
-      const conflict = checkConflict(updated, Object.values(state.tasks), state.links);
-      updated.status = conflict.hasConflict
-        ? 'CONFLICT'
-        : task.status === 'CONFLICT'
-          ? 'ON_TIME'
-          : task.status;
       return {
         tasks: { ...state.tasks, [taskId]: updated },
-        conflictTaskIds: conflict.conflictingTaskIds,
       };
     });
-  },
-
-  highlightConflicts: () => {
-    const all = Object.values(get().tasks);
-    const conflictIds = new Set<string>();
-    for (const t of all) {
-      const c = checkConflict(t, all, get().links);
-      if (c.hasConflict) conflictIds.add(t.task_id);
-    }
-    set({ conflictTaskIds: Array.from(conflictIds) });
   },
 
   setZoomLevel: (zoom) => set({ zoomLevel: Math.max(0.05, Math.min(5, zoom)) }),
